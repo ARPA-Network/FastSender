@@ -13,6 +13,8 @@ contract SenderTest is Test {
     address public user = address(0x111111111111);
     address public receiver1 = address(0x222222222222);
     address public receiver2 = address(0x333333333333);
+    string private checkpointLabel;
+    uint256 private checkpointGasLeft = 1; // Start the slot warm.
 
     function setUp() public {
         vm.prank(user);
@@ -301,7 +303,10 @@ contract SenderTest is Test {
         }
 
         vm.prank(user);
+        startMeasuringGas("SendEtherToMaxReceivers");
         sender.sendEther{value: maxReceivers * 10}(receivers, balances);
+        uint256 gasDelta = stopMeasuringGas();
+        assertGe(3000000, gasDelta);
 
         for (uint256 i = 0; i < maxReceivers; i++) {
             assertEq(receivers[i].balance, 10);
@@ -337,7 +342,10 @@ contract SenderTest is Test {
         }
 
         vm.prank(user);
+        startMeasuringGas("SendTwoTokenToMaxReceivers");
         sender.sendTwoToken(address(mock1), address(mock2), receivers, token1Balances, token2Balances);
+        uint256 gasDelta = stopMeasuringGas();
+        assertGe(3000000, gasDelta);
 
         for (uint256 i = 0; i < maxReceivers; i++) {
             assertEq(mock1.balanceOf(receivers[i]), 10);
@@ -383,5 +391,17 @@ contract SenderTest is Test {
             emit log_named_uint("token1 balance", mock1.balanceOf(receivers[i]));
             emit log_named_uint("token2 balance", mock2.balanceOf(receivers[i]));
         }
+    }
+
+    function startMeasuringGas(string memory label) internal virtual {
+        checkpointLabel = label;
+        checkpointGasLeft = gasleft();
+    }
+
+    function stopMeasuringGas() internal virtual returns (uint256 gasDelta) {
+        uint256 checkpointGasLeft2 = gasleft();
+        // Subtract 100 to account for the warm SLOAD in startMeasuringGas.
+        gasDelta = checkpointGasLeft - checkpointGasLeft2 - 100;
+        emit log_named_uint(string(abi.encodePacked(checkpointLabel, " Gas")), gasDelta);
     }
 }
