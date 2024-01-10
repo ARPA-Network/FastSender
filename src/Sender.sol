@@ -7,7 +7,7 @@ import {IERC20, SafeERC20} from "openzeppelin-contracts/contracts/token/ERC20/ut
 contract Sender is Ownable {
     using SafeERC20 for IERC20;
 
-    uint256 public constant MAX_RECEIVERS = 60;
+    uint256 public constant MAX_RECEIVERS = 50;
 
     event TokenSended(address indexed sender, address indexed tokenAddress, uint256 ethTotal, uint256 tokenTotal);
     event ClaimedTokens(address indexed token, address owner, uint256 balance);
